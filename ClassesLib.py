@@ -1,3 +1,6 @@
+from THEPOOPDECK import*
+import pygame
+
 ''' Character, enemy, and weapon class structures and item list'''
 
 class Player:
@@ -44,3 +47,18 @@ class Weapon:
         self.damage = damage
         self.Dmgtype = DmgType
         self.weight = self.weight
+
+class Cannon:
+    def __init__(self,CannonRange,damage,TypeOfCannon):
+        self.CannonRange = CannonRange
+        self.damage = damage
+        self.name = str(TypeOfCannon)
+        
+class Ship:
+    def __init__(self, cannon, health,crew, sprite):
+        self.cannon = cannon
+        self.health = health
+        self.crew = crew
+        self.sprite = sprite
+        self.rect = sprite.get_rect()
+        
