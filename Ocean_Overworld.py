@@ -1,11 +1,12 @@
 import pygame
 import __init__
+from ClassesLib import*
 import POOPDECKSCRIPTS as pds
 pygame.init()
 
 
 def OceanOverworldFunc(InOcean):
-    screen = pygame.display.set_mode([500,500])
+    screen = pygame.display.set_mode((500,500), pygame.RESIZABLE|pygame.SCALED)
 
     pygame.display.set_caption("Ocean map")
 
@@ -22,26 +23,23 @@ def OceanOverworldFunc(InOcean):
     CursorRect = ''
     TestIsland = pygame.Rect(250,250,50,50)
 #cannon variables
-    slope = 0
-    target = 0
-    start = 0
-    CannonballPos = 0
     ammo = 10
-    TimerCounter = 0
-    XMovementLimit = 20
-    YMovementLimit = 20
-    Xleft= ''
-    Yleft= ''
-    Xchange = ''
-    Ychange = ''
-    Direction = ''
-    Shooting = False
+    CannonBallSpeed = 0
+    CannonBallList = []
+    CannonReload = 0
+    ShipSpeed = 0
     while InOcean:
         pygame.time.delay(DelaySpeed)
-        TimerCounter +=1
-        if TimerCounter == 10:
-            TimerCounter = 0
-        pygame.mouse.set_visible(False)
+        CannonBallSpeed +=1
+        ShipSpeed +=1
+        
+        if CannonBallSpeed == 5:
+            CannonBallSpeed = 0
+        if ShipSpeed == 1:
+            ShipSpeed = 0
+        if CannonReload != 0:
+            CannonReload -=1
+        pygame.mouse.set_visible(True)
         CursorRect = pygame.Rect(pygame.mouse.get_pos()[0],pygame.mouse.get_pos()[1],20,20)
         ShipPosition = (ShipRect.x+int(ShipRect.width/2),ShipRect.y+int(ShipRect.height/2))
         CursorPosition = (pygame.mouse.get_pos()[0],pygame.mouse.get_pos()[1])
@@ -57,81 +55,48 @@ def OceanOverworldFunc(InOcean):
 
         if pds.TwoPointDistance(ShipPosition,CursorPosition,TestShip):
            CursorColor = pds.GetColor('CursorColorON')
-    
+        pds.DrawCursor(screen,CursorColor)
 
 #Movement if statements - looking for the move keys
         keys = pygame.key.get_pressed()
-        if keys[pygame.K_a] and ShipRect.x>0:
+        if keys[pygame.K_a] and ShipRect.x>0 and ShipSpeed == 0:
             ShipRect = ShipRect.move(0-smoothness,0)
-        if keys[pygame.K_d] and ShipRect.x<(1000-69):
+        if keys[pygame.K_d] and ShipRect.x<(1000-69) and ShipSpeed == 0:
             ShipRect = ShipRect.move(0+smoothness,0)
-        if keys[pygame.K_w] and ShipRect.y>0:
+        if keys[pygame.K_w] and ShipRect.y>0 and ShipSpeed == 0:
             ShipRect = ShipRect.move(0,0-smoothness)
-        if keys[pygame.K_s] and ShipRect.y<(1000-69):
+        if keys[pygame.K_s] and ShipRect.y<(1000-69) and ShipSpeed == 0:
             ShipRect = ShipRect.move(0,0+smoothness)
+        if keys[pygame.K_ESCAPE]:
+            return 'Title'
+            break
 
-#Looking for Mouse clicks
+#Looking for Mouse clicks/cannon fire
         if pygame.mouse.get_pressed()[0] and CursorColor == pds.GetColor('CursorColorON'):
-            if ammo != 0 and Shooting == False:
-                slope = pds.FireCannon(CursorPosition,ShipPosition)
-                target = CursorPosition
-                start = ShipPosition
-                CannonballPos = start
+            if ammo != 0 and CannonReload == 0:
+                CannonBallList.append(CannonBall(CursorPosition,ShipPosition))
+                pds.SupplimentCannonBall(CannonBallList[-1])
+                print(CannonBallList[-1].Direction)
                 ammo -= 1
-                Xleft = abs(slope[0])
-                Yleft = abs(slope[1])
-                Direction = (slope[0]/Xleft,slope[1]/Yleft)
-                Shooting = True
-                
-            
-        if slope != 0:
-            pygame.draw.circle(screen, (43, 28, 27),CannonballPos,5)
-            if Xleft >= XMovementLimit:
-                Xchange = XMovementLimit
-                Xleft -= XMovementLimit
-                XMovementLimit = 0
-            elif Xleft < XMovementLimit:
-                Xchange = Xleft
-                Xleft = 0
-                XMovementLimit -= Xleft
-            if Yleft >= YMovementLimit:
-                Ychange = YMovementLimit
-                Yleft -= YMovementLimit
-                YMovementLimit = 0
-            elif Yleft < YMovementLimit:
-                Ychange = Yleft
-                Yleft = 0
-                YMovementLimit -= Yleft
-            
-            if Xleft == 0 and Yleft == 0:
-                Xleft = abs(slope[0])
-                Yleft = abs(slope[1])
-            if TimerCounter == 0:
-                CannonballPos = (int(CannonballPos[0]+(Xchange*Direction[0])),int(CannonballPos[1]+(Ychange*Direction[1])))
-            if XMovementLimit == 0:
-                XMovementLimit = 1
-            if YMovementLimit == 0:
-                YMovementLimit = 1
-            if CannonballPos == target:
-                Xleft= ''
-                Yleft= ''
-                Xchange = ''
-                Ychange = ''
-                Direction = ''
-                slope = 0
-                target = 0
-                start = 0
-                CannonballPos = 0
-                Shooting = False
+                CannonReload = 100
+        pygame.draw.rect(screen, (255,0,0), TestIsland, 5)
+        screen.blit(TestShip.sprite, ShipRect)
+        
+        for Balls in CannonBallList:
+            Balls.MoveSelf(CannonBallSpeed)
+            screen.blit(pds.GetImage('CannonBallTiny.PNG'),(Balls.Pos[0],Balls.Pos[1],25,25))
+            if pds.TwoPointDistance(Balls.Pos,Balls.start,TestShip):
+                pass
+            else:
+                CannonBallList.remove(Balls)
             
 #looking for action key 'e' to be pressed
         if keys[pygame.K_e] and ShipRect.colliderect(TestIsland):
             return 'Island'
             break
         
-        pygame.draw.rect(screen, (255,0,0), TestIsland, 5)
-        pds.DrawCursor(screen,CursorColor)
-        #screen.blit(TestShip.sprite, ShipRect)
+        
+        
         screen.blit(tutorial_font, (ShipRect.x,ShipRect.y+ShipRect.height,ShipRect.width,ShipRect.height))
         pygame.display.flip()
 
